@@ -294,6 +294,8 @@
         npm install --sava-dev less-loader
 
         npm install mini-css-extract-plugin --save-dev
+
+        npm install css-minimizer-webpack-plugin --save-dev
     ```
 
     ```javascript
@@ -325,16 +327,26 @@
             // 怎么把style中的内容通过外部链接的方式引入呢？
 
             const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+            const CssMinimizerPlugin = require('css-minimizer-webpack-plugin')
             plugins: [
             // dist目录中生成html文件，引入打包好的bundle.js
-            new HtmlWebpackPlugin({
-                template: './index.html',
-                filename: 'app.html'， // 输出的文件名
-                inject: 'body', // script标签生成位置
-            }),
+                new HtmlWebpackPlugin({
+                    template: './index.html',
+                    filename: 'app.html'， // 输出的文件名
+                    inject: 'body', // script标签生成位置
+                }),
 
-            new MiniCssExtractPlugin()
-            ],                                                      
+                new MiniCssExtractPlugin({
+                    filename: 'style/[contenthash].css'
+                }),
+                
+              
+            ],    
+            // 优化配置
+            optimization:{
+                minimizer: [new CssMinimizerPlugin()]
+            },
+            mode:'production'                                               
     ``` 
 
 
