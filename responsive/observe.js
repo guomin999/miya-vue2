@@ -11,13 +11,15 @@ function defineReactive(data, key, val) {
         configurable: true,
         get() {
             // 收集依赖
-            dep.append();
+            console.log('get', key);
+            dep.depend();
             return val;
         },
         set(newVal) {
             if (newVal === val) {
                 return;
             }
+            console.log('set', key);
             val = newVal;
             // 数据更新，通知依赖更新
             dep.notify();
@@ -40,8 +42,8 @@ class Dep {
 
     depend() {
         // 新增依赖，那么依赖又是什么呢？(数据变化后通知谁去更新呢？模板、watch)===> Watcher
-        if (window.target) {
-            this.addSub(window.target);
+        if (Dep.target) {
+            this.addSub(Dep.target);
         }
     }
 
@@ -96,11 +98,54 @@ function parsePath(path) {
     };
 }
 
+const arrayProto = Array.prototype;
+const arrayMethod = Object.create(arrayProto);
+
+// __proto__属于部分浏览器支持的非标准属性，对于不支持的浏览器，直接将arrayMethods上的方法设置到被侦测的数组上
+const haseProto = '__proto__' in {};
+const arrayKeys = Object.getOwnPropertyNames(arrayMethod);
+
+[('push', 'pop', 'shift', 'unshift', 'splice', 'sort', 'reverse')].forEach(function (method) {
+    const original = arrayProto;
+    Object.defineProperty(arrayMethod, method, {
+        value: function mutator(...args) {
+            return original.call(this, args);
+        },
+        enumerable: false,
+        writable: true,
+        configurable: true,
+    });
+});
+
+function protoAugment(target, src, keys) {
+    target.__proto__ = src;
+}
+
+function copyAugment(target, src, keys) {
+    for (let i = 0; i < keys.length; i++) {
+        const key = keys[i];
+        def(target, key, src[key]);
+    }
+}
+
+function def(obj, key, value, enumerable) {
+    Object.defineProperty(obj, key, {
+        value,
+        enumerable: !!enumerable,
+        writable: true,
+        configurable: true,
+    });
+}
+
 class Observe {
     constructor(value) {
         this.value = value;
 
-        if (!Array.isArray(value)) {
+        if (Array.isArray(value)) {
+            // 拦截操作只针对那些被监听的数据
+            const argment = haseProto ? protoAugment : copyAugment;
+            argment(value, arrayMethod, arrayKeys);
+        } else {
             this.walk(value);
         }
     }
@@ -112,3 +157,11 @@ class Observe {
         }
     }
 }
+let a = {
+    b: 1,
+    c: [1, 2, 3, 4],
+};
+new Observe(a);
+// // a.c[0] = 5;
+// a.b = 4;
+// console.log(a.c[0], a.b);
