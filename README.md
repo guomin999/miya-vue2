@@ -4,7 +4,8 @@
 ### 1. Vue.js简介
 
 ### webpack
-1. 为什么使用webpack？ 
+1. 为什么使用webpack？ -- 模块打包器、前端工程化方案
+ [前端工程化](https://www.zhihu.com/question/433854153)
     - 资源引入顺序问题
     - window全局污染问题
     - 模块  
@@ -348,6 +349,193 @@
             },
             mode:'production'                                               
     ``` 
+
+    8. 加载图片资源
+    ```css
+        .bg {
+            background-image: url('./assets/test.png')
+        }
+
+    ```
+    9. 加载font字体
+    ```javascript
+        rules: [
+                {
+                    test: /\.png$/,
+                    type: 'asset/resource',
+                    generator: {
+                        filename: 'imgages/[contenthash][ext]' // 优先级高于output中的配置
+                    }
+                },
+                {
+                    test: /\.svg$/,
+                    type: 'asset/inline'
+                },
+                {
+                    test: /\.text$/,
+                    type: 'asset/source'
+                },
+                {
+                    test: /\.(css|less)$/,
+                    use: [MiniCssExtractPlugin.loader,'css-loader','less-loader']
+                },
+                {
+                    test: /\.(woff|woff2|eot|ttf|otf)$/,
+                    type: 'asset/resource'
+                }
+            ]
+
+    ```
+    ```css
+        @font-face {
+            font-family: 'iconfont';
+            src: url('./asset/iconfont.ttf') format('truetype')
+        }
+
+        .icon {
+            font-family: 'iconfont',
+            font-size: 30px;
+        }
+    ```
+10. 加载数据（csv、xml）
+    ```bash
+        npm install csv-loader xml-loader
+    ```
+    ```javascript
+            rules: [
+                    {
+                        test: /\.png$/,
+                        type: 'asset/resource',
+                        generator: {
+                            filename: 'imgages/[contenthash][ext]' // 优先级高于output中的配置
+                        }
+                    },
+                    {
+                        test: /\.svg$/,
+                        type: 'asset/inline'
+                    },
+                    {
+                        test: /\.text$/,
+                        type: 'asset/source'
+                    },
+                    {
+                        test: /\.(css|less)$/,
+                        use: [MiniCssExtractPlugin.loader,'css-loader','less-loader']
+                    },
+                    {
+                        test: /\.(woff|woff2|eot|ttf|otf)$/,
+                        type: 'asset/resource'
+                    },
+                    {
+                        test: /\.(csv|tsv)$/,
+                        loader: 'csv-loader'
+                    },
+                    {
+                        test: /\.(csv|xml)$/,
+                        loader: 'xml-loader'
+                    }
+                ]
+
+    ```
+    ```javascript
+        import Data from './assets/test.xml'
+        console.log(Data)
+    ```
+11. 自定义的json模块parser (json-loader)
+12. bebal-loader(js 文件需要编译吗？) ES5->ES5
+```bash
+    npm install --save-dev babel-loader @babel/core @babel/preset-env
+```
+```javascript
+    function getString() {
+        return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                resolve('hello world!!!')
+            }, 2000)
+        })
+    }
+
+    rules: [
+        test:/\.js$/,
+        exclude: /node_modules/,
+        use: {
+            loader: 'babel-loader',
+            options: {
+                presets: ['@babel/preset-env'],
+                plugins: [
+                    ['@babel/plugin-transform-runtime']
+                ]
+            }
+
+        }
+    ]
+
+```
+13. regeneratorRuntime 是webpack打包生成的全局辅助函数，有babel生成，用于兼容async/await的语法
+```bash
+    npm install --save-dev @babel/runtime
+    npm install @babel-plugin-transform-runtime --save-dev
+```
+```javascript
+    rules: [
+        test:/\.js$/,
+        exclude: /node_modules/,
+        use: {
+            loader: 'babel-loader',
+            options: {
+                presets: ['@babel/preset-env'],
+                plugins: [
+                    ['@babel/plugin-transform-runtime']
+                ]
+            }
+
+        }
+    ]
+
+```
+
+14. 代码分离
+    - 配置入口节点 entry手动分离(多入口重复打包)
+    - 防止重复 使用Entry dependencies 或者 SplitChunksPlugin去重和分离代码
+    - 动态导入 import() 函数
+
+```javascript
+    module.export = {
+        // 多入口配置
+        entry: {
+            // index: './src/index.js',
+            // another: './src/another.js'
+
+            // index: {
+            //     import: './src/index.js',
+            //     depnedOn: 'shared'
+            // },
+            // another: {
+            //     import: './src/another.js',
+            //     depnedOn: 'shared'
+            // },
+            // shared: 'lodash'
+
+            index: './src/index.js',
+            another: './src/another.js'
+        },
+
+        output: {
+            filename: '[name].bundle.js'
+        }，
+
+        optimization: {
+            splitChunks: {
+                chunks: 'all' // split-chunk-plugin(内置插件)
+            }
+        }
+
+    }
+
+```
+
+
+
 
 
 
